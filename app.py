@@ -42,6 +42,7 @@ CUSTOM_CSS = f"""
     .kpi-header {{
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 22px;
         background-color: {config.COLOR_PRIMARY};
         padding: 26px 36px;
