@@ -191,7 +191,10 @@ if st.session_state.step == 1:
                 try:
                     dept = lookup_department_by_employee(ma_nv_input.strip())
                 except Exception as exc:
-                    st.error(f"Lỗi kết nối Google Sheets: {exc}")
+                    st.error(
+                        f"Lỗi kết nối Google Sheets: [{type(exc).__name__}] "
+                        f"{exc if str(exc) else '(không có mô tả chi tiết từ Google API)'}"
+                    )
                     dept = None
 
             if dept is None:
