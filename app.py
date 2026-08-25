@@ -8,7 +8,7 @@ theo phân quyền bộ phận, ghi trực tiếp vào Google Sheets "Thực t�
 Chạy ứng dụng:
     streamlit run app.py
 
-Xem README.md để biết cách cấu hình Google Apps Script Backend trước khi chạy.
+Xem README.md để biết cách cấu hình Service Account trước khi chạy.
 """
 
 import datetime
@@ -42,28 +42,28 @@ CUSTOM_CSS = f"""
     .kpi-header {{
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 22px;
         background-color: {config.COLOR_PRIMARY};
-        padding: 18px 28px;
-        border-radius: 12px;
+        padding: 26px 36px;
+        border-radius: 14px;
         margin-bottom: 28px;
         box-shadow: 0 2px 10px rgba(4,52,99,0.25);
     }}
     .kpi-header img {{
-        height: 42px;
+        height: 64px;
         background: white;
-        padding: 4px 8px;
-        border-radius: 6px;
+        padding: 8px 14px;
+        border-radius: 8px;
     }}
     .kpi-header h1 {{
         color: {config.COLOR_WHITE};
-        font-size: 22px;
+        font-size: 30px;
         margin: 0;
         font-weight: 700;
     }}
     .kpi-header span {{
         color: {config.COLOR_ACCENT};
-        font-size: 13px;
+        font-size: 16px;
         font-weight: 600;
     }}
     /* Card chứa nội dung từng bước */
@@ -371,11 +371,17 @@ elif st.session_state.step == 4:
     st.markdown('<div class="kpi-card">', unsafe_allow_html=True)
     st.subheader("✅ Xác nhận & Gửi dữ liệu")
 
-    st.markdown("**Thông tin chung**")
+    st.markdown("**Thông tin Validator**")
     st.table(
         {
             "Mã nhân viên": [st.session_state.ma_nv],
             "Bộ phận": [st.session_state.ma_bo_phan],
+        }
+    )
+
+    st.markdown("**Thông tin nhà hàng được đánh giá**")
+    st.table(
+        {
             "Mã nhà hàng": [st.session_state.restaurant["ma"]],
             "Tỉnh/Thành phố": [st.session_state.restaurant["tinh"]],
             "Tháng/Năm": [f"{st.session_state.thang:02d}/{st.session_state.nam}"],
