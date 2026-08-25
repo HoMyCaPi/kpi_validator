@@ -8,7 +8,7 @@ theo phân quyền bộ phận, ghi trực tiếp vào Google Sheets "Thực t�
 Chạy ứng dụng:
     streamlit run app.py
 
-Xem README.md để biết cách cấu hình Service Account trước khi chạy.
+Xem README.md để biết cách cấu hình Google Apps Script Backend trước khi chạy.
 """
 
 import datetime
