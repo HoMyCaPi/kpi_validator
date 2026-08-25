@@ -142,11 +142,25 @@ def append_actual_row(
     """
     Ghi (append) một dòng vào sheet "Thực tế" qua Apps Script (action=append_actual).
     Thứ tự cột: A Mã cửa hàng | B Tháng | C Năm | D..I 6 chỉ số KPI | J Mã NV | K Thời gian.
+
+    Lưu ý về các trường dạng % (Điểm QA Audit, COL, Compliant rate):
+    Người dùng nhập trực tiếp theo thói quen tự nhiên (vd nhập 70 nghĩa là 70%,
+    nhập 70.5 nghĩa là 70.5%). Nhưng cột tương ứng trên Google Sheet có định dạng
+    Phần trăm (%), nên giá trị LƯU TRỮ thực tế phải là số thập phân (70 -> 0.70,
+    70.5 -> 0.705) thì Sheet mới hiển thị đúng "70.00%" / "70.50%". Vì vậy chỉ
+    chia 100 ở bước ghi xuống Sheet này, KHÔNG đổi cách người dùng nhập liệu hay
+    cách hiển thị trong giao diện.
     """
     row = [ma_cua_hang, thang, nam]
     for field_key in config.WRITE_ROW_ORDER:
         v = values.get(field_key)
-        row.append(v if v not in (None, "") else 0)
+        if v in (None, ""):
+            row.append(0)
+            continue
+        meta = config.KPI_FIELDS[field_key]
+        if meta["value_type"] == "percent":
+            v = round(float(v) / 100, 4)
+        row.append(v)
 
     timestamp = datetime.datetime.now().strftime("%H:%M:%S %d/%m/%Y")
     row.append(ma_nv)
