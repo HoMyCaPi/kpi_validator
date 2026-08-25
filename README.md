@@ -11,11 +11,13 @@ KPI hàng tháng theo đúng phân quyền, dữ liệu được ghi trực ti�
 kpi_validator/
 ├── app.py                          # Giao diện chính (4 View / wizard)
 ├── config.py                       # Toàn bộ cấu hình: ID Sheet, GID, màu, danh sách KPI
-├── sheets_service.py               # Toàn bộ logic đọc/ghi Google Sheets (gspread)
+├── sheets_service.py               # Gọi Apps Script Web App để đọc/ghi Google Sheets
 ├── utils.py                        # Hàm tiện ích: tính tháng mặc định, đọc file upload
 ├── requirements.txt                # Thư viện cần cài
+├── apps_script/
+│   └── Code.gs                     # Backend Google Apps Script (deploy riêng trên script.google.com)
 ├── .streamlit/
-│   └── secrets.toml.example        # File mẫu để cấu hình Service Account
+│   └── secrets.toml.example        # File mẫu để cấu hình apps_script_url / api_key
 └── README.md                       # Tài liệu này
 ```
 
@@ -49,83 +51,106 @@ streamlit run app.py
 
 ---
 
-## 3. Cấu hình Service Account để kết nối Google Sheets
+## 3. Cấu hình Google Apps Script Backend (thay cho Service Account)
 
-Ứng dụng dùng **Service Account** (tài khoản dịch vụ của Google Cloud) để đọc/ghi Google
-Sheets mà KHÔNG cần người dùng đăng nhập Google mỗi lần. Làm theo đúng các bước sau:
+Ứng dụng dùng **Google Apps Script Web App** làm lớp trung gian (proxy) đọc/ghi
+Google Sheets, thay vì Service Account. Lý do: Apps Script chạy dưới danh tính
+**tài khoản Google nội bộ công ty của bạn** (Execute as: "Me"), nên không bị
+chính sách "chặn chia sẻ ra ngoài tổ chức" (external sharing) của Google
+Workspace áp dụng — vốn là nguyên nhân Service Account (`...iam.gserviceaccount.com`)
+bị từ chối quyền dù đã share file công khai.
 
-### Bước 1 — Tạo Project trên Google Cloud Console
-1. Truy cập https://console.cloud.google.com/
-2. Góc trên bên trái, bấm chọn Project → **New Project**.
-3. Đặt tên (ví dụ: `kpi-validator-workspace`) → **Create**.
+Code Apps Script nằm ở `apps_script/Code.gs`.
 
-### Bước 2 — Bật (Enable) 2 API cần thiết
-Trong Project vừa tạo, vào **APIs & Services → Library**, tìm và bật lần lượt:
-- **Google Sheets API**
-- **Google Drive API** (cần để `gspread` mở file theo ID)
+### Bước 1 — Tạo Apps Script Project
+1. Truy cập https://script.google.com/home (đăng nhập bằng **tài khoản công ty**
+   đang có quyền truy cập cả 4 Google Sheets nguồn — ví dụ tài khoản bạn dùng để
+   mở các sheet đó hằng ngày).
+2. **New project** (Dự án mới).
+3. Đặt tên project, ví dụ `KPI Validator Backend` (bấm vào chữ "Untitled project" ở góc trên trái).
 
-### Bước 3 — Tạo Service Account
-1. Vào **APIs & Services → Credentials**.
-2. Bấm **Create Credentials → Service account**.
-3. Đặt tên, ví dụ `kpi-validator` → **Create and Continue**.
-4. Phần "Grant this service account access to project": có thể bỏ qua (Skip) vì
-   quyền truy cập Sheet sẽ được cấp riêng ở Bước 5.
-5. Bấm **Done**.
+### Bước 2 — Dán code & cấu hình API Key
+1. Xoá toàn bộ nội dung mặc định trong file `Code.gs` bên trái.
+2. Copy toàn bộ nội dung file `apps_script/Code.gs` (trong project này) và dán vào.
+3. Sửa dòng:
+   ```javascript
+   API_KEY: "THAY_BANG_CHUOI_BI_MAT_CUA_BAN",
+   ```
+   thành 1 chuỗi ngẫu nhiên, dài, khó đoán — ví dụ tự gõ 1 chuỗi 32 ký tự bất kỳ.
+   Đây là "mật khẩu" giữa Streamlit app và Apps Script, **giữ bí mật**, không public.
+4. Kiểm tra lại các ID/GID trong `CONFIG` đã đúng với 4 nguồn dữ liệu của bạn
+   (đặc biệt `SPREADSHEET_PNS_ID` — phải là ID của bản Google Sheets GỐC, không
+   phải file `.xlsx` thô nếu trước đó bạn đã convert).
+5. Lưu lại: **Ctrl+S** (hoặc Cmd+S).
 
-### Bước 4 — Tạo Key (file JSON) cho Service Account
-1. Trong danh sách **Credentials**, bấm vào Service Account vừa tạo.
-2. Vào tab **Keys → Add Key → Create new key**.
-3. Chọn định dạng **JSON** → **Create**.
-4. Trình duyệt sẽ tự tải về 1 file `.json` — **giữ bí mật file này**, không commit lên Git.
+### Bước 3 — Test nhanh (tuỳ chọn, khuyến nghị)
+1. Trong thanh công cụ phía trên, ở dropdown chọn hàm chạy thử, chọn `testLookup`.
+2. Bấm **Run** (▶). Lần đầu chạy, Google sẽ yêu cầu **cấp quyền (Authorize access)**:
+   - Chọn đúng tài khoản Google đang dùng.
+   - Nếu hiện cảnh báo "Google chưa xác minh ứng dụng này" → bấm **Advanced/Nâng cao**
+     → **Go to KPI Validator Backend (unsafe)** → **Allow/Cho phép**. Đây là cảnh báo
+     bình thường với Apps Script tự viết, không phải lỗi.
+3. Vào **View → Logs** (hoặc Ctrl+Enter) để xem kết quả tra cứu — nếu ra đúng
+   bộ phận của mã nhân viên test, nghĩa là script đã có quyền đọc Sheet thành công.
 
-File JSON có dạng:
-```json
-{
-  "type": "service_account",
-  "project_id": "kpi-validator-workspace",
-  "private_key_id": "...",
-  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
-  "client_email": "kpi-validator@kpi-validator-workspace.iam.gserviceaccount.com",
-  "client_id": "...",
-  ...
-}
-```
-Ghi nhớ giá trị `client_email` — đây chính là "địa chỉ" bạn sẽ dùng để **Share (chia sẻ)**
-các Google Sheets nguồn dữ liệu ở bước tiếp theo.
+### Bước 4 — Deploy thành Web App
+1. Góc trên phải, bấm **Deploy → New deployment**.
+2. Bấm biểu tượng bánh răng cạnh "Select type" → chọn **Web app**.
+3. Điền:
+   - **Description**: `KPI Validator v1`
+   - **Execute as**: **Me (email của bạn)**
+   - **Who has access**: **Anyone**
+4. Bấm **Deploy**.
+5. Nếu được hỏi cấp quyền lần nữa, làm tương tự Bước 3.
+6. Sau khi deploy xong, copy **Web app URL** — có dạng:
+   ```
+   https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXXXX/exec
+   ```
+   Đây chính là `apps_script_url` sẽ dùng ở Bước 5.
 
-### Bước 5 — Share (chia sẻ) 4 Google Sheets nguồn dữ liệu cho Service Account
-Mở lần lượt **4 file Google Sheets** sau, bấm nút **Share (Chia sẻ)** ở góc trên bên phải,
-và thêm email của Service Account (`client_email` ở Bước 4) với quyền:
+> ⚠️ Mỗi khi bạn **sửa code** trong `Code.gs` sau này, phải vào **Deploy → Manage
+> deployments → (chọn deployment) → Edit (biểu tượng bút chì) → Version: New version
+> → Deploy** thì thay đổi mới có hiệu lực trên URL cũ. Tạo "New deployment" hoàn
+> toàn mới sẽ sinh ra URL khác, phải cập nhật lại Secrets.
 
-| Sheet | ID | Quyền cần cấp |
-|---|---|---|
-| Monthly KPI (chứa sheet "Thực tế") | `196DIW3ZxGvJdbqEiCMui5F_mJXNGPSK0zwMM1Ab72j0` | **Editor** (cần ghi dữ liệu) |
-| 2026 - PNS Data share - Ngọc | `19G1FRmD5rAqyMMKXFjmalOdpVG64GLfG` | Viewer (chỉ đọc) |
-| Danh sách Nhà hàng | `1TPRbbPfzCsCxW55VYHyYVfn47wNhdYdiQ_uqazR0_5I` | Viewer (chỉ đọc) |
-| File Template mẫu | `1mjhtClhmlMDINF_dUZEHbGeQ7WrxGm3c6ZjxhM7_Y7c` | Viewer (chỉ đọc, hoặc để "Anyone with link" vì chỉ dùng để tải file mẫu) |
+### Bước 5 — Nạp URL + API Key vào Streamlit
 
-> ⚠️ Nếu bỏ qua bước Share này, ứng dụng sẽ báo lỗi `PermissionError` / `SpreadsheetNotFound`
-> dù ID Sheet đã đúng, vì Service Account chưa có quyền truy cập.
+**Cách A — Streamlit Community Cloud:**
+1. Vào app trên Streamlit Cloud → **Manage app → Settings → Secrets**.
+2. **Xoá** khối `[gcp_service_account]` cũ (nếu còn) — không cần nữa.
+3. Dán:
+   ```toml
+   apps_script_url = "https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXXXX/exec"
+   apps_script_api_key = "chuoi-bi-mat-ban-dat-o-Buoc-2"
+   ```
+4. **Save** → app tự khởi động lại.
 
-### Bước 6 — Nạp credentials vào ứng dụng
+**Cách B — Chạy local:**
+1. Copy `.streamlit/secrets.toml.example` thành `.streamlit/secrets.toml`.
+2. Điền đúng 2 giá trị trên vào đó.
+3. `.streamlit/secrets.toml` (bản thật) **không được commit lên Git**.
 
-**Cách A — Chạy local (khuyến nghị khi phát triển):**
-1. Đổi tên file JSON tải về thành `service_account.json`.
-2. Copy file này vào **cùng thư mục với `app.py`**.
-3. `sheets_service.py` sẽ tự động đọc file này nếu không tìm thấy `st.secrets`.
-4. **Tuyệt đối không** đưa file này lên Git/GitHub công khai (thêm vào `.gitignore`).
+### Bước 6 — Kiểm tra hoạt động
+Mở app, nhập 1 Mã nhân viên có thật → nếu tra được bộ phận và chuyển sang View 2
+là toàn bộ chuỗi kết nối đã thông suốt.
 
-**Cách B — Deploy lên Streamlit Community Cloud (khuyến nghị khi dùng thật cho team):**
-1. Mở file JSON Service Account, copy toàn bộ nội dung.
-2. Trong project, tạo file `.streamlit/secrets.toml` (copy từ file mẫu
-   `.streamlit/secrets.toml.example` đi kèm), rồi điền đúng các giá trị tương ứng từ JSON
-   vào các trường: `project_id`, `private_key_id`, `private_key`, `client_email`, `client_id`,
-   `client_x509_cert_url`.
-   - Lưu ý: giữ nguyên các ký tự `\n` bên trong `private_key` (không xuống dòng thật).
-3. Khi deploy trên https://streamlit.io/cloud, vào **App settings → Secrets**, dán toàn bộ
-   nội dung `secrets.toml` vào đó (Streamlit Cloud sẽ tự inject vào `st.secrets`).
-4. `.streamlit/secrets.toml` (bản thật) **không được commit lên Git** — chỉ giữ file
-   `.example` trong repo.
+---
+
+## 3b. (Tham khảo) Cách cũ dùng Service Account — khi nào nên dùng lại
+
+Cách Service Account (đã mô tả trong các phiên bản trước của tài liệu này) vẫn
+là cách chuẩn, phổ biến và không phụ thuộc vào 1 tài khoản cá nhân cụ thể nào.
+Nhược điểm duy nhất gặp phải là một số Google Workspace bật chính sách chặn
+chia sẻ file ra ngoài tổ chức, khiến Service Account (được xem là "external
+identity") bị từ chối quyền dù đã share công khai. Nếu công ty bạn:
+- Có Admin sẵn sàng bật `Sharing outside of organization` hoặc cấu hình
+  `Domain-wide delegation`, hoặc
+- Không gặp vấn đề chặn nói trên,
+
+thì quay lại dùng Service Account vẫn là lựa chọn ổn định hơn về lâu dài, vì
+không phụ thuộc vào 1 tài khoản cá nhân cụ thể phải tồn tại/đăng nhập được.
+Trường hợp dùng Apps Script như tài liệu này: nếu tài khoản đã tạo & deploy
+script bị khoá/đổi mật khẩu/rời công ty, cần người khác deploy lại.
 
 ---
 
@@ -154,19 +179,23 @@ và thêm email của Service Account (`client_email` ở Bước 4) với quy�
 
 | Lỗi | Nguyên nhân | Cách khắc phục |
 |---|---|---|
-| `RuntimeError: Không tìm thấy thông tin xác thực...` | Chưa cấu hình `secrets.toml` hoặc `service_account.json` | Xem lại Bước 6 |
-| `gspread.exceptions.SpreadsheetNotFound` | Service Account chưa được share quyền vào Sheet | Xem lại Bước 5 |
-| `APIError: PERMISSION_DENIED` khi Submit | Service Account chỉ có quyền Viewer trên sheet Monthly KPI | Đổi thành quyền **Editor** |
-| Không tìm thấy Mã nhân viên dù chắc chắn đúng | Sai gid/sheet, hoặc dữ liệu có khoảng trắng thừa | Kiểm tra lại gid=254853384 và dữ liệu cột B |
+| `RuntimeError: Chưa cấu hình APPS_SCRIPT_URL...` | Chưa dán `apps_script_url` / `apps_script_api_key` vào Secrets | Xem lại Bước 5 |
+| `Apps Script báo lỗi: Unauthorized: sai API key` | `apps_script_api_key` trong Secrets không khớp `CONFIG.API_KEY` trong `Code.gs` | Kiểm tra lại 2 giá trị này khớp nhau tuyệt đối |
+| `Apps Script trả về dữ liệu không phải JSON hợp lệ` | URL sai, hoặc "Who has access" chưa để "Anyone" | Deploy lại đúng theo Bước 4 |
+| `Apps Script báo lỗi: Không tìm thấy sheet với gid=...` | Sai GID trong `Code.gs`, hoặc tài khoản deploy không có quyền xem sheet đó | Kiểm tra lại GID + quyền truy cập của tài khoản đã deploy script |
+| Không tìm thấy Mã nhân viên dù chắc chắn đúng | Sai ID/GID trong `Code.gs`, hoặc dữ liệu có khoảng trắng thừa | Dùng `testLookup()` trong Apps Script Editor để debug trực tiếp (xem Bước 3) |
+| Sửa `Code.gs` xong nhưng không thấy đổi | Quên tạo **New version** khi deploy lại | Deploy → Manage deployments → Edit → Version: New version → Deploy |
 | Upload file không đọc được KPI nào | Tên tiêu đề cột trong file không khớp `label` trong `config.py` | Sửa lại tiêu đề cột hoặc cập nhật `config.KPI_FIELDS` |
 
 ---
 
 ## 6. Bảo mật
 
-- File `service_account.json` / `secrets.toml` (bản thật) chứa private key — **không** commit
-  lên Git, không chia sẻ qua chat công khai.
-- Chỉ nên cấp quyền **Editor** cho đúng 1 sheet cần ghi (Monthly KPI), các sheet còn lại chỉ
-  cần **Viewer**.
-- Có thể tạo riêng 1 Service Account chỉ dùng cho ứng dụng này, để dễ thu hồi quyền truy cập
-  nếu cần mà không ảnh hưởng các ứng dụng khác.
+- `apps_script_api_key` đóng vai trò như 1 mật khẩu API — **không** commit lên Git, không
+  chia sẻ qua chat công khai. Nếu nghi ngờ bị lộ, đổi `API_KEY` trong `Code.gs`, deploy lại
+  (New version), rồi cập nhật lại Secrets trên Streamlit Cloud.
+- Vì Web App để "Who has access: Anyone", **bất kỳ ai có URL + đúng API Key đều gọi được** —
+  API Key chính là lớp bảo vệ duy nhất, nên cần đủ dài/ngẫu nhiên và giữ kín.
+- Tài khoản Google dùng để deploy Apps Script nên là tài khoản có quyền hạn phù hợp
+  (không nhất thiết là tài khoản cá nhân của 1 người cụ thể — có thể tạo 1 tài khoản
+  dịch vụ nội bộ dùng chung cho việc này nếu công ty có).

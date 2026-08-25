@@ -22,6 +22,8 @@ GID_KPI_SHEET = 0                 # Sheet "KPI" (định nghĩa cấu trúc ch�
 GID_THUCTE_SHEET = 1945875318     # Sheet "Thực tế" -> nơi APPEND dữ liệu khi Submit
 
 # --- Nguồn 2: 2026 - PNS Data share - Ngọc (tra cứu Mã bộ phận theo Mã NV) ---
+# LƯU Ý: file gốc trước đây là .xlsx thô trên Drive (API không thao tác được),
+# đã convert sang Google Sheets gốc qua "Tệp > Lưu dưới dạng Google Trang tính" -> ID mới.
 SPREADSHEET_PNS_ID = "1SuPBOCnfAWC75b4Uv2J-8e-M2uUcfUa4vljLLOyYvho"
 GID_PNS_DATA = 254853384
 # Cột B = Mã nhân viên, Cột F = Mã bộ phận (theo yêu cầu nghiệp vụ)
@@ -126,3 +128,18 @@ VALID_DEPARTMENTS = ["PKT", "PQA", "PNS", "MKT"]
 
 # Tháng hiển thị dạng dropdown
 MONTHS = list(range(1, 13))
+
+# ============================================================
+# 4. CẤU HÌNH GOOGLE APPS SCRIPT BACKEND
+# ============================================================
+# Thay cho Service Account + gspread. App gọi tới 1 Web App Apps Script
+# (chạy dưới danh tính tài khoản nội bộ công ty) để đọc/ghi Google Sheets.
+#
+# KHUYẾN NGHỊ: KHÔNG điền giá trị thật vào 2 dòng dưới đây / KHÔNG commit lên
+# GitHub. Thay vào đó cấu hình qua Streamlit Secrets:
+#   st.secrets["apps_script_url"]
+#   st.secrets["apps_script_api_key"]
+# 2 dòng dưới chỉ dùng làm fallback khi chạy local nhanh, không khuyến khích
+# giữ giá trị thật ở đây nếu repo là public.
+APPS_SCRIPT_URL = ""       # dạng: https://script.google.com/macros/s/XXXXXXXX/exec
+APPS_SCRIPT_API_KEY = ""   # phải khớp đúng CONFIG.API_KEY trong apps_script/Code.gs
