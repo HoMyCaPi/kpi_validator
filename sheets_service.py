@@ -59,18 +59,34 @@ def _get_endpoint_config() -> tuple[str, str]:
     return url, api_key
 
 
-def _call_apps_script(action: str, payload: Optional[dict] = None, timeout: int = 30) -> dict:
-    """Gọi 1 action tới Apps Script Web App, trả về phần `data` trong response JSON."""
+def _call_apps_script(action: str, payload: Optional[dict] = None, timeout: int = 60) -> dict:
+    """
+    Gọi 1 action tới Apps Script Web App, trả về phần `data` trong response JSON.
+
+    Apps Script đôi khi phản hồi chậm bất thường ở lần gọi đầu tiên sau một
+    thời gian không hoạt động ("cold start"). Để giảm lỗi gián đoạn cho người
+    dùng, hàm này tự động thử lại 1 lần nếu lần gọi đầu bị timeout.
+    """
     url, api_key = _get_endpoint_config()
     body = {"action": action, "api_key": api_key}
     if payload:
         body.update(payload)
 
-    try:
-        resp = requests.post(url, json=body, timeout=timeout)
-        resp.raise_for_status()
-    except requests.RequestException as exc:
-        raise RuntimeError(f"Không gọi được Apps Script Web App: {exc}") from exc
+    last_exc = None
+    for attempt in range(2):  # thử tối đa 2 lần: 1 lần chính + 1 lần retry
+        try:
+            resp = requests.post(url, json=body, timeout=timeout)
+            resp.raise_for_status()
+            break
+        except requests.Timeout as exc:
+            last_exc = exc
+            continue  # thử lại lần nữa (nếu còn lượt)
+        except requests.RequestException as exc:
+            raise RuntimeError(f"Không gọi được Apps Script Web App: {exc}") from exc
+    else:
+        raise RuntimeError(
+            f"Không gọi được Apps Script Web App sau 2 lần thử (timeout={timeout}s): {last_exc}"
+        )
 
     try:
         data = resp.json()
