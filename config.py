@@ -22,7 +22,7 @@ GID_KPI_SHEET = 0                 # Sheet "KPI" (định nghĩa cấu trúc ch�
 GID_THUCTE_SHEET = 1945875318     # Sheet "Thực tế" -> nơi APPEND dữ liệu khi Submit
 
 # --- Nguồn 2: 2026 - PNS Data share - Ngọc (tra cứu Mã bộ phận theo Mã NV) ---
-SPREADSHEET_PNS_ID = "19G1FRmD5rAqyMMKXFjmalOdpVG64GLfG"
+SPREADSHEET_PNS_ID = "1SuPBOCnfAWC75b4Uv2J-8e-M2uUcfUa4vljLLOyYvho"
 GID_PNS_DATA = 254853384
 # Cột B = Mã nhân viên, Cột F = Mã bộ phận (theo yêu cầu nghiệp vụ)
 COL_PNS_MA_NV = "B"
