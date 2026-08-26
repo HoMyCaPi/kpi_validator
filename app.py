@@ -24,7 +24,7 @@ from sheets_service import (
 )
 
 # ============================================================
-# CẤU HÌNH TRANG & CSS THƯƠNG HIỆU
+# CẤU HÌNH TRANG
 # ============================================================
 st.set_page_config(
     page_title=config.APP_TITLE,
@@ -33,6 +33,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# ============================================================
+# TẢI FONT INTER (dùng <link> thay vì chỉ @import cho chắc chắn)
+# ============================================================
 st.markdown(
     '<link rel="preconnect" href="https://fonts.googleapis.com">'
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
@@ -40,11 +43,21 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ============================================================
+# CSS THƯƠNG HIỆU
+# ============================================================
 CUSTOM_CSS = f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    html, body, .stApp, .stApp * {{
+    /* Ép font Inter lên toàn bộ chữ, nhưng LOẠI TRỪ icon nội bộ của Streamlit
+       (icon dùng font ligature riêng - vd chữ "upload" render thành hình icon;
+       ép font lên icon sẽ làm lộ chữ thật thay vì hình, gây lỗi hiển thị). */
+    html, body, .stApp,
+    .stApp p, .stApp span:not([data-testid="stIconMaterial"]), .stApp label,
+    .stApp div:not([data-testid="stIconMaterial"]), .stApp h1, .stApp h2, .stApp h3,
+    .stApp h4, .stApp h5, .stApp h6, .stApp button, .stApp input, .stApp li, .stApp a,
+    .stApp table, .stApp td, .stApp th {{
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     }}
 
@@ -52,97 +65,104 @@ CUSTOM_CSS = f"""
         background-color: {config.COLOR_BG};
     }}
 
-    /* ===================== HEADER THƯƠNG HIỆU ===================== */
+    /* ===================== HEADER THƯƠNG HIỆU (logo trên, chữ dưới, căn giữa) ===================== */
     .kpi-header {{
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 22px;
+        gap: 16px;
         background-color: {config.COLOR_PRIMARY};
-        padding: 26px 36px;
+        padding: 32px 36px;
         border-radius: 14px;
         margin-bottom: 28px;
         box-shadow: 0 2px 10px rgba(4,52,99,0.25);
     }}
     .kpi-header img {{
-        height: 64px;
+        height: 72px;
         background: white;
-        padding: 8px 14px;
+        padding: 10px 16px;
         border-radius: 8px;
+    }}
+    .kpi-header-text {{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        text-align: center;
     }}
     .kpi-header h1 {{
         color: {config.COLOR_WHITE};
-        font-size: 30px;
+        font-size: 26px;
         margin: 0;
         font-weight: 700;
     }}
     .kpi-header span {{
         color: {config.COLOR_ACCENT};
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
     }}
 
     /* ===================== STEPPER (THANH TIẾN TRÌNH) ===================== */
-    .step-bar {{
+    .step-bar-wrap {{
+        margin: 4px 4px 30px 4px;
+    }}
+    .step-track-labels {{
         display: flex;
         justify-content: space-between;
-        position: relative;
-        margin: 4px 8px 32px 8px;
+        margin-top: 6px;
     }}
-    .step-item {{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
+    .step-label-col {{
         flex: 1;
-        position: relative;
-        opacity: 0.4;
-        transition: opacity 0.2s ease;
+        text-align: center;
     }}
-    .step-item.active, .step-item.done {{
-        opacity: 1;
+    .step-label {{
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.3;
     }}
-    .step-item:not(:last-child)::after {{
-        content: "";
-        position: absolute;
-        top: 15px;
-        left: calc(50% + 20px);
-        width: calc(100% - 40px);
-        height: 2px;
-        background: #DCE1E7;
-        z-index: 0;
+    .step-label.upcoming {{ color: #9AA5B1; opacity: 0.7; }}
+    .step-label.active, .step-label.done {{ color: {config.COLOR_PRIMARY}; }}
+
+    /* Style riêng cho các nút số bước (chỉ áp dụng trong khung stepper, nhờ marker + :has) */
+    div[data-testid="stVerticalBlock"]:has(> div.step-bar-marker) div.stButton > button {{
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        padding: 0;
+        font-weight: 700;
+        font-size: 17px;
+        background-color: {config.COLOR_PRIMARY};
+        color: {config.COLOR_WHITE};
+        border: none;
+        margin: 0 auto;
+        display: block;
     }}
-    .step-item.done:not(:last-child)::after {{
-        background: {config.COLOR_PRIMARY};
+    div[data-testid="stVerticalBlock"]:has(> div.step-bar-marker) div.stButton > button:hover {{
+        background-color: #06508f;
+        color: {config.COLOR_ACCENT};
+        transform: none;
+        box-shadow: 0 0 0 4px rgba(4,52,99,0.15);
     }}
-    .step-circle {{
-        width: 30px;
-        height: 30px;
+    .step-circle-static {{
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 13px;
-        background: #E1E5EA;
-        color: #7C8798;
-        position: relative;
-        z-index: 1;
+        font-size: 17px;
+        margin: 0 auto;
     }}
-    .step-item.active .step-circle {{
+    .step-circle-static.active {{
         background: {config.COLOR_ACCENT};
         color: {config.COLOR_PRIMARY};
     }}
-    .step-item.done .step-circle {{
-        background: {config.COLOR_PRIMARY};
-        color: {config.COLOR_WHITE};
-    }}
-    .step-label {{
-        font-size: 12px;
-        font-weight: 700;
-        color: {config.COLOR_PRIMARY};
-        text-align: center;
-        line-height: 1.2;
+    .step-circle-static.upcoming {{
+        background: #E1E5EA;
+        color: #9AA5B1;
+        opacity: 0.8;
     }}
 
     /* ===================== CARD CHỨA NỘI DUNG (container border=True) ===================== */
@@ -156,6 +176,16 @@ CUSTOM_CSS = f"""
     }}
     div[data-testid="stVerticalBlockBorderWrapper"] > div {{
         padding: 8px 6px;
+    }}
+
+    /* ===================== VÙNG NHẬP LIỆU - NỀN SÁNG NỔI BẬT ===================== */
+    div[data-testid="stVerticalBlock"]:has(> div.input-zone-marker) {{
+        background-color: #F4F8FC !important;
+        border: 1px solid #E1EAF3 !important;
+        border-radius: 12px !important;
+        padding: 18px !important;
+        margin-top: 10px;
+        margin-bottom: 10px;
     }}
 
     /* ===================== Ô NHẬP LIỆU (INPUT) ===================== */
@@ -175,12 +205,12 @@ CUSTOM_CSS = f"""
         border-radius: 8px !important;
     }}
     div[data-testid="stFileUploaderDropzone"] {{
-        background-color: #FAFBFC !important;
+        background-color: {config.COLOR_WHITE} !important;
         border: 1.5px dashed #C7CFD8 !important;
         border-radius: 10px !important;
     }}
 
-    /* ===================== NÚT BẤM ===================== */
+    /* ===================== NÚT HÀNH ĐỘNG CHÍNH ===================== */
     div.stButton > button {{
         background-color: {config.COLOR_PRIMARY};
         color: white;
@@ -195,9 +225,6 @@ CUSTOM_CSS = f"""
         color: {config.COLOR_ACCENT};
         transform: translateY(-1px);
         box-shadow: 0 3px 8px rgba(4,52,99,0.25);
-    }}
-    div.stButton > button[kind="primary"] {{
-        background-color: {config.COLOR_PRIMARY};
     }}
 
     .info-pill {{
@@ -215,13 +242,13 @@ CUSTOM_CSS = f"""
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 # ============================================================
-# HEADER
+# HEADER (logo trên cùng, 2 dòng tiêu đề bên dưới, căn giữa)
 # ============================================================
 st.markdown(
     f"""
     <div class="kpi-header">
         <img src="{config.LOGO_URL}" />
-        <div>
+        <div class="kpi-header-text">
             <h1>{config.APP_TITLE}</h1>
             <span>Hệ thống thu thập & xác thực chỉ số KPI hàng tháng</span>
         </div>
@@ -256,16 +283,37 @@ STEP_LABELS = ["Xác thực NV", "Chọn nhà hàng", "Nhập KPI", "Xác nhận
 
 
 def render_step_bar():
-    items_html = ""
-    for i, label in enumerate(STEP_LABELS, start=1):
-        css_class = "active" if i == st.session_state.step else ("done" if i < st.session_state.step else "")
-        items_html += (
-            f'<div class="step-item {css_class}">'
-            f'<div class="step-circle">{i}</div>'
-            f'<div class="step-label">{label}</div>'
-            f"</div>"
+    """
+    Vẽ stepper với các số bước là NÚT BẤM THẬT (st.button) cho các bước đã đi
+    qua (có thể bấm để quay lại), và hình tròn tĩnh cho bước hiện tại / bước
+    chưa tới (không thể bấm tới trước khi hoàn thành các bước trước đó).
+    """
+    with st.container():
+        st.markdown('<div class="step-bar-marker"></div>', unsafe_allow_html=True)
+        cols = st.columns(len(STEP_LABELS))
+        for idx, col in enumerate(cols, start=1):
+            with col:
+                if idx < st.session_state.step:
+                    # Bước đã hoàn thành -> nút thật, bấm được để quay lại
+                    if st.button(str(idx), key=f"step_nav_{idx}", help=f"Quay lại: {STEP_LABELS[idx-1]}"):
+                        st.session_state.step = idx
+                        st.rerun()
+                elif idx == st.session_state.step:
+                    st.markdown(
+                        f'<div class="step-circle-static active">{idx}</div>', unsafe_allow_html=True
+                    )
+                else:
+                    st.markdown(
+                        f'<div class="step-circle-static upcoming">{idx}</div>', unsafe_allow_html=True
+                    )
+
+        label_cols_html = "".join(
+            f'<div class="step-label-col"><div class="step-label '
+            f'{"active" if i == st.session_state.step else ("done" if i < st.session_state.step else "upcoming")}">'
+            f"{label}</div></div>"
+            for i, label in enumerate(STEP_LABELS, start=1)
         )
-    st.markdown(f'<div class="step-bar">{items_html}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="step-track-labels">{label_cols_html}</div>', unsafe_allow_html=True)
 
 
 render_step_bar()
@@ -491,50 +539,69 @@ elif st.session_state.step == 3:
 
         st.markdown("##### Các chỉ số KPI thuộc thẩm quyền bộ phận **%s**" % dept)
 
-        input_mode = st.radio(
-            "Phương thức nhập dữ liệu",
-            options=["Nhập trực tiếp", "Upload file Excel/CSV theo mẫu"],
-            horizontal=True,
-        )
-
         current_values = dict(st.session_state.kpi_values)
 
-        if input_mode == "Nhập trực tiếp":
-            for key in allowed_fields:
-                meta = config.KPI_FIELDS[key]
-                label = f'{meta["label"]}  ({meta["unit"]})'
-                default_val = current_values.get(key, 0.0)
-                val = st.number_input(
-                    label, value=float(default_val), step=0.01, format="%.2f", key=f"input_{key}"
-                )
-                current_values[key] = round(val, 2)
+        # -------- Vùng nhập liệu: nền sáng nổi bật (đánh dấu qua input-zone-marker) --------
+        with st.container():
+            st.markdown('<div class="input-zone-marker"></div>', unsafe_allow_html=True)
 
-        else:
-            st.markdown(
-                f"[📥 Tải file Template mẫu]({config.TEMPLATE_DOWNLOAD_URL})  \n"
-                "Điền dữ liệu vào file, sau đó upload lại bên dưới. "
-                "Hệ thống sẽ tự động đọc & điền vào các chỉ số thuộc thẩm quyền bộ phận của bạn "
-                "(dòng dữ liệu đầu tiên trong file sẽ được sử dụng)."
+            input_mode = st.radio(
+                "Phương thức nhập dữ liệu",
+                options=["Nhập trực tiếp", "Upload file Excel/CSV theo mẫu"],
+                horizontal=True,
             )
-            uploaded_file = st.file_uploader(
-                "Upload file Excel (.xlsx) hoặc CSV", type=["xlsx", "xls", "csv"]
-            )
-            if uploaded_file is not None:
-                try:
-                    extracted = utils.parse_template_file(uploaded_file, allowed_fields)
-                    current_values.update(extracted)
-                    st.success("✅ Đã đọc và điền dữ liệu từ file thành công. Vui lòng kiểm tra lại bên dưới.")
-                except ValueError as exc:
-                    st.error(str(exc))
 
-            for key in allowed_fields:
-                meta = config.KPI_FIELDS[key]
-                label = f'{meta["label"]}  ({meta["unit"]})'
-                default_val = current_values.get(key, 0.0)
-                val = st.number_input(
-                    label, value=float(default_val), step=0.01, format="%.2f", key=f"upload_input_{key}"
+            if input_mode == "Nhập trực tiếp":
+                for key in allowed_fields:
+                    meta = config.KPI_FIELDS[key]
+                    label = f'{meta["label"]}  ({meta["unit"]})'
+                    default_val = current_values.get(key, 0.0)
+                    val = st.number_input(
+                        label, value=float(default_val), step=0.01, format="%.2f", key=f"input_{key}"
+                    )
+                    current_values[key] = round(val, 2)
+
+            else:
+                st.markdown(
+                    f"[📥 Tải file Template mẫu]({config.TEMPLATE_DOWNLOAD_URL})  \n"
+                    "Điền dữ liệu vào file, sau đó upload lại bên dưới. "
+                    "Hệ thống sẽ tự động đọc & điền vào các chỉ số thuộc thẩm quyền bộ phận của bạn "
+                    "(dòng dữ liệu đầu tiên trong file sẽ được sử dụng)."
                 )
-                current_values[key] = round(val, 2)
+                uploaded_file = st.file_uploader(
+                    "Upload file Excel (.xlsx) hoặc CSV", type=["xlsx", "xls", "csv"]
+                )
+                if uploaded_file is not None:
+                    try:
+                        extracted, file_ma_nha_hang = utils.parse_template_file(uploaded_file, allowed_fields)
+
+                        # QUAN TRỌNG: set trực tiếp session_state của từng ô nhập TRƯỚC khi
+                        # vẽ lại widget, vì Streamlit ưu tiên giá trị đã lưu trong session_state
+                        # theo key hơn tham số value= truyền vào -- nếu không làm bước này,
+                        # ô sẽ vẫn giữ giá trị cũ (0.00) dù đã đọc được dữ liệu mới từ file.
+                        for k, v in extracted.items():
+                            st.session_state[f"upload_input_{k}"] = v
+
+                        current_values.update(extracted)
+                        st.success("✅ Đã đọc và điền dữ liệu từ file thành công. Vui lòng kiểm tra lại bên dưới.")
+
+                        if file_ma_nha_hang and file_ma_nha_hang != st.session_state.restaurant["ma"]:
+                            st.warning(
+                                f"⚠️ Mã nhà hàng trong file (**{file_ma_nha_hang}**) không khớp với "
+                                f"nhà hàng đã chọn ở bước 2 (**{st.session_state.restaurant['ma']}**). "
+                                f"Dữ liệu KPI vẫn được điền vào form, vui lòng kiểm tra lại kỹ trước khi Submit."
+                            )
+                    except ValueError as exc:
+                        st.error(str(exc))
+
+                for key in allowed_fields:
+                    meta = config.KPI_FIELDS[key]
+                    label = f'{meta["label"]}  ({meta["unit"]})'
+                    default_val = current_values.get(key, 0.0)
+                    val = st.number_input(
+                        label, value=float(default_val), step=0.01, format="%.2f", key=f"upload_input_{key}"
+                    )
+                    current_values[key] = round(val, 2)
 
         col_back, col_next = st.columns([1, 1])
         with col_back:
