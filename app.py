@@ -39,7 +39,7 @@ st.set_page_config(
 st.markdown(
     '<link rel="preconnect" href="https://fonts.googleapis.com">'
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-    '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">',
+    '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">',
     unsafe_allow_html=True,
 )
 
@@ -48,7 +48,7 @@ st.markdown(
 # ============================================================
 CUSTOM_CSS = f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
     /* Ép font Inter lên toàn bộ chữ, nhưng LOẠI TRỪ icon nội bộ của Streamlit
        (icon dùng font ligature riêng - vd chữ "upload" render thành hình icon;
@@ -93,12 +93,11 @@ CUSTOM_CSS = f"""
     }}
     /* ---- DÒNG TIÊU ĐỀ LỚN "KPI VALIDATOR WORKSPACE" - chỉnh size ở ĐÂY ---- */
     .kpi-title {{
-        color: {config.COLOR_ACCENT};
+        color: {config.COLOR_WHITE};
         font-size: 32px;
         margin: 0;
         font-weight: 800;
         letter-spacing: 0.5px;
-        opacity: 0.9;
     }}
     /* ---- DÒNG PHỤ NHỎ "Hệ thống thu thập..." - chỉnh size ở ĐÂY (RIÊNG, không liên quan dòng trên) ---- */
     .kpi-subtitle {{
