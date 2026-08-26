@@ -98,6 +98,7 @@ CUSTOM_CSS = f"""
         margin: 0;
         font-weight: 800;
         letter-spacing: 0.5px;
+        opacity: 0.9;
     }}
     /* ---- DÒNG PHỤ NHỎ "Hệ thống thu thập..." - chỉnh size ở ĐÂY (RIÊNG, không liên quan dòng trên) ---- */
     .kpi-subtitle {{
