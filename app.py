@@ -93,15 +93,16 @@ CUSTOM_CSS = f"""
     }}
     .kpi-header h1 {{
         color: {config.COLOR_WHITE};
-        font-size: 22px;
+        font-size: 30px;
         margin: 0;
-        font-weight: 700;
+        font-weight: 800;
         letter-spacing: 0.5px;
     }}
     .kpi-header span {{
         color: {config.COLOR_ACCENT};
-        font-size: 16px;
-        font-weight: 600;
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
     }}
 
     /* ===================== STEPPER (THANH TIẾN TRÌNH - vạch pill bo tròn, tách khỏi card) ===================== */
@@ -171,6 +172,20 @@ CUSTOM_CSS = f"""
     /* Ẩn icon liên kết (anchor link) mà Streamlit tự thêm cạnh mỗi tiêu đề */
     [data-testid="stHeaderActionElements"] {{
         display: none !important;
+    }}
+
+    /* ===================== TIÊU ĐỀ MỤC (thay emoji bằng SVG icon nét mảnh) ===================== */
+    .section-title {{
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 24px;
+        font-weight: 700;
+        color: {config.COLOR_BLACK};
+        margin: 0 0 0.6rem 0;
+    }}
+    .section-title svg {{
+        flex-shrink: 0;
     }}
 
     /* ===================== CARD CHỨA NỘI DUNG (container border=True) ===================== */
@@ -248,6 +263,45 @@ CUSTOM_CSS = f"""
 </style>
 """
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+
+# ============================================================
+# ICON SVG NÉT MẢNH (thay cho emoji 3D, đồng bộ phong cách Flat/Corporate)
+# ============================================================
+def _icon_svg(path_svg: str, size: int = 24) -> str:
+    return (
+        f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" '
+        f'stroke="{config.COLOR_PRIMARY}" stroke-width="2" stroke-linecap="round" '
+        f'stroke-linejoin="round">{path_svg}</svg>'
+    )
+
+
+ICON_LOCK = _icon_svg(
+    '<rect x="5" y="11" width="14" height="9" rx="2"></rect>'
+    '<path d="M8 11V7a4 4 0 0 1 8 0v4"></path>'
+)
+ICON_STORE = _icon_svg(
+    '<path d="M3 9l1.5-5h15L21 9"></path>'
+    '<path d="M3 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0"></path>'
+    '<path d="M5 9v10h14V9"></path>'
+    '<path d="M9 21v-6h6v6"></path>'
+)
+ICON_CHART = _icon_svg(
+    '<polyline points="3 17 9 11 13 15 21 7"></polyline>'
+    '<polyline points="14 7 21 7 21 14"></polyline>'
+)
+ICON_CHECK = _icon_svg(
+    '<circle cx="12" cy="12" r="9"></circle>'
+    '<polyline points="8 12 11 15 16 9"></polyline>'
+)
+
+
+def section_title(icon_html: str, text: str):
+    """Vẽ tiêu đề mục (thay cho st.subheader) với icon SVG nét mảnh + chữ."""
+    st.markdown(
+        f'<div class="section-title">{icon_html}<span>{text}</span></div>',
+        unsafe_allow_html=True,
+    )
 
 # ============================================================
 # HEADER (logo trên cùng, 2 dòng tiêu đề bên dưới, căn giữa)
@@ -331,7 +385,7 @@ st.markdown('<div style="height: 28px;"></div>', unsafe_allow_html=True)
 # ============================================================
 if st.session_state.step == 1:
     with st.container(border=True):
-        st.subheader("🔐 Xác thực Nhân viên")
+        section_title(ICON_LOCK, "Xác thực Nhân viên")
         st.write("Vui lòng nhập Mã nhân viên để hệ thống tra cứu bộ phận và phân quyền nhập liệu.")
 
         with st.container():
@@ -374,7 +428,7 @@ if st.session_state.step == 1:
 # ============================================================
 elif st.session_state.step == 2:
     with st.container(border=True):
-        st.subheader("🏬 Chọn Nhà hàng")
+        section_title(ICON_STORE, "Chọn Nhà hàng")
         st.markdown(
             f'<span class="info-pill">Mã NV: {st.session_state.ma_nv}</span>'
             f'<span class="info-pill">Bộ phận: {st.session_state.ma_bo_phan}</span>',
@@ -531,7 +585,7 @@ elif st.session_state.step == 2:
 # ============================================================
 elif st.session_state.step == 3:
     with st.container(border=True):
-        st.subheader("📈 Nhập dữ liệu KPI")
+        section_title(ICON_CHART, "Nhập dữ liệu KPI")
         st.markdown(
             f'<span class="info-pill">Mã NV: {st.session_state.ma_nv}</span>'
             f'<span class="info-pill">Bộ phận: {st.session_state.ma_bo_phan}</span>'
@@ -637,7 +691,7 @@ elif st.session_state.step == 3:
 # ============================================================
 elif st.session_state.step == 4:
     with st.container(border=True):
-        st.subheader("✅ Xác nhận & Gửi dữ liệu")
+        section_title(ICON_CHECK, "Xác nhận & Gửi dữ liệu")
 
         # -------------------- NHÁNH BULK IMPORT --------------------
         if st.session_state.is_bulk:
