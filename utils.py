@@ -30,7 +30,7 @@ def default_month_year(today: Optional[datetime.date] = None) -> tuple[int, int]
     return today.month - 1, today.year
 
 
-def parse_template_file(uploaded_file, allowed_field_keys: list[str]) -> dict:
+def parse_template_file(uploaded_file, allowed_field_keys: list[str]) -> tuple[dict, Optional[str]]:
     """
     Đọc file Excel (.xlsx) hoặc CSV do người dùng upload theo mẫu Template.
     Chỉ lấy giá trị của các field nằm trong `allowed_field_keys`
@@ -39,7 +39,9 @@ def parse_template_file(uploaded_file, allowed_field_keys: list[str]) -> dict:
     Cách match: so khớp TÊN CỘT (header) trong file với `label` trong config.KPI_FIELDS.
     Ví dụ header "Doanh thu (PKT)" -> field_key "doanh_thu".
 
-    Trả về: dict {field_key: float} - chỉ chứa các field đọc được & hợp lệ.
+    Trả về: (dict {field_key: float} các chỉ số đọc được,
+             Mã nhà hàng tìm thấy ở CỘT ĐẦU TIÊN của file nếu có -- dùng để đối
+             chiếu với nhà hàng đã chọn ở View 2 -- hoặc None nếu cột trống).
     Ném ValueError nếu không đọc được file hoặc file không có dữ liệu.
     """
     filename = uploaded_file.name.lower()
@@ -57,6 +59,15 @@ def parse_template_file(uploaded_file, allowed_field_keys: list[str]) -> dict:
 
     # Chỉ lấy dòng dữ liệu đầu tiên (mỗi lần nhập tương ứng 1 nhà hàng / 1 tháng)
     first_row = df.iloc[0]
+
+    # Mã nhà hàng (nếu file có cột đầu tiên chứa mã nhà hàng, theo đúng template)
+    ma_nha_hang_in_file: Optional[str] = None
+    if len(df.columns) > 0:
+        raw_ma = first_row[df.columns[0]]
+        if not pd.isna(raw_ma):
+            candidate = str(raw_ma).strip()
+            if candidate:
+                ma_nha_hang_in_file = candidate
 
     # Xây map: label hiển thị -> field_key
     label_to_key = {meta["label"]: key for key, meta in config.KPI_FIELDS.items()}
@@ -81,7 +92,7 @@ def parse_template_file(uploaded_file, allowed_field_keys: list[str]) -> dict:
             "Không tìm thấy cột dữ liệu hợp lệ nào khớp với chỉ số KPI thuộc thẩm quyền "
             "bộ phận của bạn trong file đã upload. Vui lòng kiểm tra lại tiêu đề cột."
         )
-    return extracted
+    return extracted, ma_nha_hang_in_file
 
 
 def format_value_display(value: float, value_type: str) -> str:
