@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 app.py
 ------
@@ -74,7 +75,7 @@ CUSTOM_CSS = f"""
         background-color: {config.COLOR_PRIMARY};
         padding: 32px 36px;
         border-radius: 14px;
-        margin-bottom: 28px;
+        margin-bottom: 32px;
         box-shadow: 0 2px 10px rgba(4,52,99,0.25);
     }}
     .kpi-header img {{
@@ -102,45 +103,73 @@ CUSTOM_CSS = f"""
         font-weight: 600;
     }}
 
-    /* ===================== STEPPER (THANH TIẾN TRÌNH - kiểu đường nối, to hơn) ===================== */
+    /* ===================== STEPPER (THANH TIẾN TRÌNH - vạch pill bo tròn, tách khỏi card) ===================== */
     .step-static-label {{
+        position: relative;
         text-align: center;
-        padding: 12px 6px;
+        padding: 12px 10px 18px 10px;
         font-size: 16px;
         font-weight: 700;
-        border-bottom: 6px solid #E1E5EA;
         color: #9AA5B1;
+    }}
+    .step-static-label::after {{
+        content: "";
+        position: absolute;
+        left: 14%;
+        right: 14%;
+        bottom: 0;
+        height: 5px;
+        border-radius: 999px;
+        background: #E1E5EA;
     }}
     .step-static-label.active {{
         color: {config.COLOR_PRIMARY};
-        border-bottom-color: {config.COLOR_ACCENT};
+    }}
+    .step-static-label.active::after {{
+        background: {config.COLOR_ACCENT};
     }}
     .step-static-label.upcoming {{
-        color: #9AA5B1;
-        border-bottom-color: #E1E5EA;
-        opacity: 0.65;
+        opacity: 0.6;
     }}
 
-    /* Nút bấm cho các bước ĐÃ HOÀN THÀNH -- style để trông giống label chữ có
-       gạch chân màu (không phải hộp nút), scoped riêng theo marker của từng cột */
+    /* Nút bấm cho các bước ĐÃ HOÀN THÀNH -- style để trông giống label chữ với
+       vạch pill bo tròn bên dưới (không phải hộp nút), scoped theo marker của từng cột */
+    div[data-testid="stVerticalBlock"]:has(> div.step-marker-done) {{
+        margin-bottom: 4px;
+    }}
     div[data-testid="stVerticalBlock"]:has(> div.step-marker-done) div.stButton > button {{
+        position: relative;
         background: transparent !important;
         border: none !important;
-        border-bottom: 6px solid {config.COLOR_PRIMARY} !important;
-        border-radius: 0 !important;
+        border-radius: 6px !important;
         color: {config.COLOR_PRIMARY} !important;
         font-weight: 700 !important;
         font-size: 16px !important;
-        padding: 12px 6px !important;
+        padding: 12px 10px 18px 10px !important;
         width: 100% !important;
         box-shadow: none !important;
         transform: none !important;
+    }}
+    div[data-testid="stVerticalBlock"]:has(> div.step-marker-done) div.stButton > button::after {{
+        content: "";
+        position: absolute;
+        left: 14%;
+        right: 14%;
+        bottom: 6px;
+        height: 5px;
+        border-radius: 999px;
+        background: {config.COLOR_PRIMARY};
     }}
     div[data-testid="stVerticalBlock"]:has(> div.step-marker-done) div.stButton > button:hover {{
         background: rgba(4,52,99,0.06) !important;
         color: {config.COLOR_PRIMARY} !important;
         box-shadow: none !important;
         transform: none !important;
+    }}
+
+    /* Khoảng thở giữa toàn bộ cụm Stepper và Card nội dung bên dưới */
+    div[data-testid="stVerticalBlock"]:has(> div.step-bar-wrap-marker) {{
+        margin-bottom: 30px;
     }}
 
     /* ===================== CARD CHỨA NỘI DUNG (container border=True) ===================== */
@@ -262,26 +291,28 @@ STEP_LABELS = ["Xác thực NV", "Chọn nhà hàng", "Nhập KPI", "Xác nhận
 
 def render_step_bar():
     """
-    Vẽ stepper kiểu đường viền dưới nối liền giữa các bước (giống bản gốc),
-    kích thước to hơn. Bước ĐÃ HOÀN THÀNH là nút bấm thật (st.button, được
-    style để trông như label chữ có gạch chân màu) -- bấm để quay lại bước đó.
-    Bước hiện tại / chưa tới là nhãn tĩnh, không bấm được.
+    Vẽ stepper kiểu vạch pill bo tròn nối giữa các bước (tách rời khỏi card
+    bên dưới bằng margin riêng), kích thước to hơn. Bước ĐÃ HOÀN THÀNH là nút
+    bấm thật (st.button, được style để trông như label chữ có vạch màu) --
+    bấm để quay lại bước đó. Bước hiện tại / chưa tới là nhãn tĩnh, không bấm được.
     """
-    cols = st.columns(len(STEP_LABELS))
-    for idx, col in enumerate(cols, start=1):
-        with col:
-            status = "active" if idx == st.session_state.step else ("done" if idx < st.session_state.step else "upcoming")
-            with st.container():
-                st.markdown(f'<div class="step-marker step-marker-{status}"></div>', unsafe_allow_html=True)
-                if status == "done":
-                    if st.button(STEP_LABELS[idx - 1], key=f"step_nav_{idx}", use_container_width=True):
-                        st.session_state.step = idx
-                        st.rerun()
-                else:
-                    st.markdown(
-                        f'<div class="step-static-label {status}">{STEP_LABELS[idx - 1]}</div>',
-                        unsafe_allow_html=True,
-                    )
+    with st.container():
+        st.markdown('<div class="step-bar-wrap-marker"></div>', unsafe_allow_html=True)
+        cols = st.columns(len(STEP_LABELS))
+        for idx, col in enumerate(cols, start=1):
+            with col:
+                status = "active" if idx == st.session_state.step else ("done" if idx < st.session_state.step else "upcoming")
+                with st.container():
+                    st.markdown(f'<div class="step-marker step-marker-{status}"></div>', unsafe_allow_html=True)
+                    if status == "done":
+                        if st.button(STEP_LABELS[idx - 1], key=f"step_nav_{idx}", use_container_width=True):
+                            st.session_state.step = idx
+                            st.rerun()
+                    else:
+                        st.markdown(
+                            f'<div class="step-static-label {status}">{STEP_LABELS[idx - 1]}</div>',
+                            unsafe_allow_html=True,
+                        )
 
 
 render_step_bar()
