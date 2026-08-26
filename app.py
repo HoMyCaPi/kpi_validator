@@ -99,7 +99,7 @@ CUSTOM_CSS = f"""
     }}
     .kpi-header span {{
         color: {config.COLOR_ACCENT};
-        font-size: 30px;
+        font-size: 25px;
         font-weight: 600;
     }}
 
@@ -262,7 +262,7 @@ st.markdown(
         <img src="{config.LOGO_URL}" />
         <div class="kpi-header-text">
             <h1>{config.APP_TITLE}</h1>
-            <span>HỆ THỐNG THU THẬP & XÁC THỰC CHỈ SỐ KPI HẰNG THÁNG</span>
+            <span>Hệ thống thu thập & xác thực chỉ số KPI hàng tháng</span>
         </div>
     </div>
     """,
