@@ -94,11 +94,10 @@ CUSTOM_CSS = f"""
     /* ---- DÒNG TIÊU ĐỀ LỚN "KPI VALIDATOR WORKSPACE" - chỉnh size ở ĐÂY ---- */
     .kpi-title {{
         color: {config.COLOR_ACCENT};
-        font-size: 35px;
+        font-size: 32px;
         margin: 0;
         font-weight: 500;
         letter-spacing: 0.5px;
-        opacity: 0.9;
         /* Streamlit bản mới tự áp gradient/hiệu ứng "trong suốt" lên h1-h6
            (background-clip:text + -webkit-text-fill-color:transparent), khiến
            chữ hiển thị mờ/tối trên nền đậm thay vì đúng màu đã set ở trên.
@@ -114,7 +113,6 @@ CUSTOM_CSS = f"""
         font-size: 12px;
         font-weight: 500;
         letter-spacing: 0.3px;
-        opacity: 0.9;
         background: none !important;
         -webkit-background-clip: initial !important;
         background-clip: initial !important;
