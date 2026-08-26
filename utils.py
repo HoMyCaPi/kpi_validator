@@ -91,3 +91,63 @@ def format_value_display(value: float, value_type: str) -> str:
     if value_type == "percent":
         return f"{value:,.2f} %"
     return f"{value:,.2f} VND"
+
+
+def parse_bulk_template_file(uploaded_file, allowed_field_keys: list[str]) -> list[dict]:
+    """
+    Đọc file Excel/CSV Bulk Import — MỖI DÒNG là 1 nhà hàng. Cột đầu tiên (A)
+    được coi là Mã nhà hàng, các cột còn lại match theo `label` trong
+    config.KPI_FIELDS giống parse_template_file, nhưng đọc TẤT CẢ các dòng
+    thay vì chỉ dòng đầu tiên.
+
+    Trả về: list các dict {"ma_nha_hang": str, "values": {field_key: float}}.
+    Bỏ qua các dòng không có Mã nhà hàng. Ném ValueError nếu không đọc được
+    file hoặc không có dòng dữ liệu hợp lệ nào.
+    """
+    filename = uploaded_file.name.lower()
+    raw_bytes = uploaded_file.read()
+
+    if filename.endswith(".csv"):
+        df = pd.read_csv(io.BytesIO(raw_bytes))
+    elif filename.endswith((".xlsx", ".xls")):
+        df = pd.read_excel(io.BytesIO(raw_bytes))
+    else:
+        raise ValueError("Định dạng file không hỗ trợ. Vui lòng dùng .xlsx, .xls hoặc .csv")
+
+    if df.empty:
+        raise ValueError("File không có dữ liệu.")
+
+    ma_col = df.columns[0]  # Cột A = Mã nhà hàng theo đúng template mẫu
+    label_to_key = {meta["label"]: key for key, meta in config.KPI_FIELDS.items()}
+
+    rows: list[dict] = []
+    for _, r in df.iterrows():
+        raw_ma = r[ma_col]
+        ma_nha_hang = "" if pd.isna(raw_ma) else str(raw_ma).strip()
+        if not ma_nha_hang:
+            continue  # bỏ qua dòng trống Mã nhà hàng
+
+        values: dict[str, float] = {}
+        for col_name in df.columns:
+            col_clean = str(col_name).strip()
+            if col_clean not in label_to_key:
+                continue
+            field_key = label_to_key[col_clean]
+            if field_key not in allowed_field_keys:
+                continue  # bỏ qua chỉ số ngoài thẩm quyền bộ phận
+            raw_val = r[col_name]
+            if pd.isna(raw_val):
+                continue
+            try:
+                values[field_key] = round(float(raw_val), 2)
+            except (ValueError, TypeError):
+                continue
+
+        rows.append({"ma_nha_hang": ma_nha_hang, "values": values})
+
+    if not rows:
+        raise ValueError(
+            "Không đọc được dòng dữ liệu hợp lệ nào. Vui lòng kiểm tra cột A "
+            "(Mã nhà hàng) đã được điền đầy đủ chưa."
+        )
+    return rows
