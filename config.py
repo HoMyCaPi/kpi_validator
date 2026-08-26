@@ -56,7 +56,7 @@ COLOR_SUCCESS = "#1E8E3E"
 COLOR_ERROR = "#D93025"
 
 LOGO_URL = "https://taladthaigroup.com/wp-content/uploads/2025/05/logo_talad.png"
-APP_TITLE = "KPI Validator Workspace"
+APP_TITLE = "KPI VALIDATOR WORKSPACE"
 
 # ============================================================
 # 3. DANH SÁCH CÁC CHỈ SỐ KPI - GẮN VỚI BỘ PHẬN SỞ HỮU
