@@ -73,15 +73,15 @@ CUSTOM_CSS = f"""
         justify-content: center;
         gap: 16px;
         background-color: {config.COLOR_PRIMARY};
-        padding: 32px 36px;
+        padding: 30px 36px;
         border-radius: 14px;
         margin-bottom: 32px;
         box-shadow: 0 2px 10px rgba(4,52,99,0.25);
     }}
     .kpi-header img {{
-        height: 72px;
+        height: 70px;
         background: white;
-        padding: 10px 16px;
+        padding: 14px 20px;
         border-radius: 8px;
     }}
     .kpi-header-text {{
@@ -93,72 +93,68 @@ CUSTOM_CSS = f"""
     }}
     .kpi-header h1 {{
         color: {config.COLOR_WHITE};
-        font-size: 26px;
+        font-size: 22px;
         margin: 0;
         font-weight: 700;
+        letter-spacing: 0.5px;
     }}
     .kpi-header span {{
         color: {config.COLOR_ACCENT};
-        font-size: 25px;
+        font-size: 16px;
         font-weight: 600;
     }}
 
     /* ===================== STEPPER (THANH TIẾN TRÌNH - vạch pill bo tròn, tách khỏi card) ===================== */
+    /* Vạch pill được vẽ là 1 khối RIÊNG, nằm ngay dưới chữ theo dòng chảy tài
+       liệu bình thường (không dùng position:absolute) -- đảm bảo luôn thẳng
+       hàng giữa các bước, không phụ thuộc vào việc các cột có bị co giãn
+       chiều cao khác nhau hay không. */
     .step-static-label {{
-        position: relative;
         text-align: center;
-        padding: 12px 10px 18px 10px;
+        padding: 4px 10px 0 10px;
         font-size: 16px;
         font-weight: 700;
-        color: #9AA5B1;
-    }}
-    .step-static-label::after {{
-        content: "";
-        position: absolute;
-        left: 14%;
-        right: 14%;
-        bottom: 0;
-        height: 5px;
-        border-radius: 999px;
-        background: #E1E5EA;
+        color: #6C757D;
     }}
     .step-static-label.active {{
         color: {config.COLOR_PRIMARY};
     }}
-    .step-static-label.active::after {{
+    .step-static-label.upcoming {{
+        color: #6C757D;
+    }}
+    .step-pill {{
+        height: 5px;
+        border-radius: 999px;
+        margin: 10px 14% 0 14%;
+        background: #C9D0D8;
+    }}
+    .step-pill.active {{
         background: {config.COLOR_ACCENT};
     }}
-    .step-static-label.upcoming {{
-        opacity: 0.6;
+    .step-pill.done {{
+        background: {config.COLOR_PRIMARY};
+    }}
+    .step-pill.upcoming {{
+        background: #C9D0D8;
     }}
 
-    /* Nút bấm cho các bước ĐÃ HOÀN THÀNH -- style để trông giống label chữ với
-       vạch pill bo tròn bên dưới (không phải hộp nút), scoped theo marker của từng cột */
+    /* Nút bấm cho các bước ĐÃ HOÀN THÀNH -- style để trông giống label chữ
+       (không phải hộp nút); vạch pill của bước "done" được vẽ RIÊNG ngay sau
+       nút (xem render_step_bar), không dùng ::after, cùng lý do nêu trên. */
     div[data-testid="stVerticalBlock"]:has(> div.step-marker-done) {{
         margin-bottom: 4px;
     }}
     div[data-testid="stVerticalBlock"]:has(> div.step-marker-done) div.stButton > button {{
-        position: relative;
         background: transparent !important;
         border: none !important;
         border-radius: 6px !important;
         color: {config.COLOR_PRIMARY} !important;
         font-weight: 700 !important;
         font-size: 16px !important;
-        padding: 12px 10px 18px 10px !important;
+        padding: 4px 10px !important;
         width: 100% !important;
         box-shadow: none !important;
         transform: none !important;
-    }}
-    div[data-testid="stVerticalBlock"]:has(> div.step-marker-done) div.stButton > button::after {{
-        content: "";
-        position: absolute;
-        left: 14%;
-        right: 14%;
-        bottom: 6px;
-        height: 5px;
-        border-radius: 999px;
-        background: {config.COLOR_PRIMARY};
     }}
     div[data-testid="stVerticalBlock"]:has(> div.step-marker-done) div.stButton > button:hover {{
         background: rgba(4,52,99,0.06) !important;
@@ -182,8 +178,8 @@ CUSTOM_CSS = f"""
         background-color: {config.COLOR_WHITE} !important;
         border: 1px solid #E7EAEE !important;
         border-top: 4px solid {config.COLOR_ACCENT} !important;
-        border-radius: 14px !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06) !important;
         margin-bottom: 20px;
     }}
     div[data-testid="stVerticalBlockBorderWrapper"] > div {{
@@ -298,8 +294,12 @@ def render_step_bar():
     """
     Vẽ stepper kiểu vạch pill bo tròn nối giữa các bước (tách rời khỏi card
     bên dưới bằng margin riêng), kích thước to hơn. Bước ĐÃ HOÀN THÀNH là nút
-    bấm thật (st.button, được style để trông như label chữ có vạch màu) --
-    bấm để quay lại bước đó. Bước hiện tại / chưa tới là nhãn tĩnh, không bấm được.
+    bấm thật (st.button) -- bấm để quay lại bước đó. Bước hiện tại / chưa tới
+    là nhãn tĩnh, không bấm được.
+
+    Vạch pill được vẽ là 1 <div> RIÊNG ngay sau chữ/nút (dòng chảy tài liệu
+    bình thường), KHÔNG dùng ::after định vị tuyệt đối -- tránh lệch hàng
+    giữa các bước khi các cột bị co giãn chiều cao không đồng đều.
     """
     with st.container():
         st.markdown('<div class="step-bar-wrap-marker"></div>', unsafe_allow_html=True)
@@ -318,6 +318,7 @@ def render_step_bar():
                             f'<div class="step-static-label {status}">{STEP_LABELS[idx - 1]}</div>',
                             unsafe_allow_html=True,
                         )
+                    st.markdown(f'<div class="step-pill {status}"></div>', unsafe_allow_html=True)
 
 
 render_step_bar()
