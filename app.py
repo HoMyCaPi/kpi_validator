@@ -91,16 +91,18 @@ CUSTOM_CSS = f"""
         gap: 8px;
         text-align: center;
     }}
-    .kpi-header h1 {{
+    /* ---- DÒNG TIÊU ĐỀ LỚN "KPI VALIDATOR WORKSPACE" - chỉnh size ở ĐÂY ---- */
+    .kpi-title {{
         color: {config.COLOR_WHITE};
         font-size: 32px;
         margin: 0;
         font-weight: 800;
         letter-spacing: 0.5px;
     }}
-    .kpi-header span {{
+    /* ---- DÒNG PHỤ NHỎ "Hệ thống thu thập..." - chỉnh size ở ĐÂY (RIÊNG, không liên quan dòng trên) ---- */
+    .kpi-subtitle {{
         color: {config.COLOR_ACCENT};
-        font-size: 22px;
+        font-size: 12px;
         font-weight: 500;
         letter-spacing: 0.3px;
         opacity: 0.9;
@@ -312,8 +314,8 @@ st.markdown(
     <div class="kpi-header">
         <img src="{config.LOGO_URL}" />
         <div class="kpi-header-text">
-            <h1>{config.APP_TITLE}</h1>
-            <span>Hệ thống thu thập & xác thực chỉ số KPI hàng tháng</span>
+            <h1 class="kpi-title">{config.APP_TITLE}</h1>
+            <span class="kpi-subtitle">Hệ thống thu thập & xác thực chỉ số KPI hàng tháng</span>
         </div>
     </div>
     """,
