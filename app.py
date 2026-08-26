@@ -99,7 +99,7 @@ CUSTOM_CSS = f"""
     }}
     .kpi-header span {{
         color: {config.COLOR_ACCENT};
-        font-size: 35px;
+        font-size: 30px;
         font-weight: 600;
     }}
 
