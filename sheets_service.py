@@ -164,6 +164,13 @@ def append_actual_row(
     70.5 -> 0.705) thì Sheet mới hiển thị đúng "70.00%" / "70.50%". Vì vậy chỉ
     chia 100 ở bước ghi xuống Sheet này, KHÔNG đổi cách người dùng nhập liệu hay
     cách hiển thị trong giao diện.
+
+    QUAN TRỌNG - KHÔNG TỰ ĐỘNG RETRY: khác với các thao tác chỉ đọc (an toàn
+    khi gọi lại nhiều lần), đây là thao tác GHI. Nếu Apps Script đã append
+    thành công nhưng phần PHẢN HỒI bị lỗi trên đường về (vd lỗi redirect nội
+    bộ của Google, xem README), việc tự động gọi lại sẽ ghi TRÙNG dòng dữ
+    liệu. Vì vậy chỉ thử 1 lần; nếu lỗi, người dùng cần tự kiểm tra trong
+    Sheet "Thực tế" xem dòng đã được ghi chưa trước khi bấm Submit lại.
     """
     row = [ma_cua_hang, thang, nam]
     for field_key in config.WRITE_ROW_ORDER:
@@ -180,4 +187,13 @@ def append_actual_row(
     row.append(ma_nv)
     row.append(timestamp)
 
-    _call_apps_script("append_actual", {"row": row})
+    try:
+        _call_apps_script("append_actual", {"row": row}, max_attempts=1)
+    except RuntimeError as exc:
+        raise RuntimeError(
+            f"{exc}\n\n"
+            "⚠️ LƯU Ý: lỗi này có thể chỉ xảy ra ở bước PHẢN HỒI (không phải "
+            "lỗi ghi dữ liệu thực sự). Vui lòng mở sheet 'Thực tế' kiểm tra "
+            "xem dòng dữ liệu đã được ghi chưa TRƯỚC KHI bấm Submit lại, để "
+            "tránh tạo dòng trùng lặp."
+        ) from exc
