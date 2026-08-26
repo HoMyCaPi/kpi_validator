@@ -99,6 +99,14 @@ CUSTOM_CSS = f"""
         font-weight: 500;
         letter-spacing: 0.5px;
         opacity: 0.9;
+        /* Streamlit bản mới tự áp gradient/hiệu ứng "trong suốt" lên h1-h6
+           (background-clip:text + -webkit-text-fill-color:transparent), khiến
+           chữ hiển thị mờ/tối trên nền đậm thay vì đúng màu đã set ở trên.
+           3 dòng dưới đây HUỶ hoàn toàn hiệu ứng đó, ép hiển thị đúng màu thật. */
+        background: none !important;
+        -webkit-background-clip: initial !important;
+        background-clip: initial !important;
+        -webkit-text-fill-color: {config.COLOR_ACCENT} !important;
     }}
     /* ---- DÒNG PHỤ NHỎ "Hệ thống thu thập..." - chỉnh size ở ĐÂY (RIÊNG, không liên quan dòng trên) ---- */
     .kpi-subtitle {{
@@ -107,6 +115,10 @@ CUSTOM_CSS = f"""
         font-weight: 500;
         letter-spacing: 0.3px;
         opacity: 0.9;
+        background: none !important;
+        -webkit-background-clip: initial !important;
+        background-clip: initial !important;
+        -webkit-text-fill-color: {config.COLOR_ACCENT} !important;
     }}
 
     /* ===================== STEPPER (THANH TIẾN TRÌNH - vạch pill bo tròn, tách khỏi card) ===================== */
