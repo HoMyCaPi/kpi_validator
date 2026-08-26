@@ -93,7 +93,7 @@ CUSTOM_CSS = f"""
     }}
     /* ---- DÒNG TIÊU ĐỀ LỚN "KPI VALIDATOR WORKSPACE" - chỉnh size ở ĐÂY ---- */
     .kpi-title {{
-        color: {config.COLOR_WHITE};
+        color: {config.COLOR_ACCENT};
         font-size: 32px;
         margin: 0;
         font-weight: 800;
