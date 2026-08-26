@@ -103,66 +103,45 @@ CUSTOM_CSS = f"""
         font-weight: 600;
     }}
 
-    /* ===================== STEPPER (THANH TIẾN TRÌNH) ===================== */
-    .step-bar-wrap {{
-        margin: 4px 4px 30px 4px;
-    }}
-    .step-track-labels {{
-        display: flex;
-        justify-content: space-between;
-        margin-top: 6px;
-    }}
-    .step-label-col {{
-        flex: 1;
+    /* ===================== STEPPER (THANH TIẾN TRÌNH - kiểu đường nối, to hơn) ===================== */
+    .step-static-label {{
         text-align: center;
-    }}
-    .step-label {{
-        font-size: 14px;
+        padding: 12px 6px;
+        font-size: 16px;
         font-weight: 700;
-        line-height: 1.3;
-    }}
-    .step-label.upcoming {{ color: #9AA5B1; opacity: 0.7; }}
-    .step-label.active, .step-label.done {{ color: {config.COLOR_PRIMARY}; }}
-
-    /* Style riêng cho các nút số bước (chỉ áp dụng trong khung stepper, nhờ marker + :has) */
-    div[data-testid="stVerticalBlock"]:has(> div.step-bar-marker) div.stButton > button {{
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        padding: 0;
-        font-weight: 700;
-        font-size: 17px;
-        background-color: {config.COLOR_PRIMARY};
-        color: {config.COLOR_WHITE};
-        border: none;
-        margin: 0 auto;
-        display: block;
-    }}
-    div[data-testid="stVerticalBlock"]:has(> div.step-bar-marker) div.stButton > button:hover {{
-        background-color: #06508f;
-        color: {config.COLOR_ACCENT};
-        transform: none;
-        box-shadow: 0 0 0 4px rgba(4,52,99,0.15);
-    }}
-    .step-circle-static {{
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 17px;
-        margin: 0 auto;
-    }}
-    .step-circle-static.active {{
-        background: {config.COLOR_ACCENT};
-        color: {config.COLOR_PRIMARY};
-    }}
-    .step-circle-static.upcoming {{
-        background: #E1E5EA;
+        border-bottom: 6px solid #E1E5EA;
         color: #9AA5B1;
-        opacity: 0.8;
+    }}
+    .step-static-label.active {{
+        color: {config.COLOR_PRIMARY};
+        border-bottom-color: {config.COLOR_ACCENT};
+    }}
+    .step-static-label.upcoming {{
+        color: #9AA5B1;
+        border-bottom-color: #E1E5EA;
+        opacity: 0.65;
+    }}
+
+    /* Nút bấm cho các bước ĐÃ HOÀN THÀNH -- style để trông giống label chữ có
+       gạch chân màu (không phải hộp nút), scoped riêng theo marker của từng cột */
+    div[data-testid="stVerticalBlock"]:has(> div.step-marker-done) div.stButton > button {{
+        background: transparent !important;
+        border: none !important;
+        border-bottom: 6px solid {config.COLOR_PRIMARY} !important;
+        border-radius: 0 !important;
+        color: {config.COLOR_PRIMARY} !important;
+        font-weight: 700 !important;
+        font-size: 16px !important;
+        padding: 12px 6px !important;
+        width: 100% !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }}
+    div[data-testid="stVerticalBlock"]:has(> div.step-marker-done) div.stButton > button:hover {{
+        background: rgba(4,52,99,0.06) !important;
+        color: {config.COLOR_PRIMARY} !important;
+        box-shadow: none !important;
+        transform: none !important;
     }}
 
     /* ===================== CARD CHỨA NỘI DUNG (container border=True) ===================== */
@@ -284,36 +263,26 @@ STEP_LABELS = ["Xác thực NV", "Chọn nhà hàng", "Nhập KPI", "Xác nhận
 
 def render_step_bar():
     """
-    Vẽ stepper với các số bước là NÚT BẤM THẬT (st.button) cho các bước đã đi
-    qua (có thể bấm để quay lại), và hình tròn tĩnh cho bước hiện tại / bước
-    chưa tới (không thể bấm tới trước khi hoàn thành các bước trước đó).
+    Vẽ stepper kiểu đường viền dưới nối liền giữa các bước (giống bản gốc),
+    kích thước to hơn. Bước ĐÃ HOÀN THÀNH là nút bấm thật (st.button, được
+    style để trông như label chữ có gạch chân màu) -- bấm để quay lại bước đó.
+    Bước hiện tại / chưa tới là nhãn tĩnh, không bấm được.
     """
-    with st.container():
-        st.markdown('<div class="step-bar-marker"></div>', unsafe_allow_html=True)
-        cols = st.columns(len(STEP_LABELS))
-        for idx, col in enumerate(cols, start=1):
-            with col:
-                if idx < st.session_state.step:
-                    # Bước đã hoàn thành -> nút thật, bấm được để quay lại
-                    if st.button(str(idx), key=f"step_nav_{idx}", help=f"Quay lại: {STEP_LABELS[idx-1]}"):
+    cols = st.columns(len(STEP_LABELS))
+    for idx, col in enumerate(cols, start=1):
+        with col:
+            status = "active" if idx == st.session_state.step else ("done" if idx < st.session_state.step else "upcoming")
+            with st.container():
+                st.markdown(f'<div class="step-marker step-marker-{status}"></div>', unsafe_allow_html=True)
+                if status == "done":
+                    if st.button(STEP_LABELS[idx - 1], key=f"step_nav_{idx}", use_container_width=True):
                         st.session_state.step = idx
                         st.rerun()
-                elif idx == st.session_state.step:
-                    st.markdown(
-                        f'<div class="step-circle-static active">{idx}</div>', unsafe_allow_html=True
-                    )
                 else:
                     st.markdown(
-                        f'<div class="step-circle-static upcoming">{idx}</div>', unsafe_allow_html=True
+                        f'<div class="step-static-label {status}">{STEP_LABELS[idx - 1]}</div>',
+                        unsafe_allow_html=True,
                     )
-
-        label_cols_html = "".join(
-            f'<div class="step-label-col"><div class="step-label '
-            f'{"active" if i == st.session_state.step else ("done" if i < st.session_state.step else "upcoming")}">'
-            f"{label}</div></div>"
-            for i, label in enumerate(STEP_LABELS, start=1)
-        )
-        st.markdown(f'<div class="step-track-labels">{label_cols_html}</div>', unsafe_allow_html=True)
 
 
 render_step_bar()
@@ -326,37 +295,40 @@ if st.session_state.step == 1:
         st.subheader("🔐 Xác thực Nhân viên")
         st.write("Vui lòng nhập Mã nhân viên để hệ thống tra cứu bộ phận và phân quyền nhập liệu.")
 
-        ma_nv_input = st.text_input(
-            "Mã nhân viên", value=st.session_state.ma_nv, placeholder="Ví dụ: BN.DNG"
-        )
+        with st.container():
+            st.markdown('<div class="input-zone-marker"></div>', unsafe_allow_html=True)
 
-        if st.button("Tra cứu", type="primary", use_container_width=True):
-            if not ma_nv_input.strip():
-                st.error("Vui lòng nhập Mã nhân viên.")
-            else:
-                with st.spinner("Đang tra cứu thông tin nhân viên..."):
-                    try:
-                        dept = lookup_department_by_employee(ma_nv_input.strip())
-                    except Exception as exc:
-                        st.error("Lỗi kết nối Google Sheets — chi tiết kỹ thuật bên dưới:")
-                        st.exception(exc)
-                        dept = None
+            ma_nv_input = st.text_input(
+                "Mã nhân viên", value=st.session_state.ma_nv, placeholder="Ví dụ: BN.DNG"
+            )
 
-                if dept is None:
-                    st.error(
-                        "❌ Không tìm thấy Mã nhân viên trong hệ thống. "
-                        "Vui lòng kiểm tra lại hoặc liên hệ bộ phận Nhân sự."
-                    )
-                elif dept not in config.VALID_DEPARTMENTS:
-                    st.error(
-                        f"❌ Mã bộ phận '{dept}' tra cứu được không nằm trong danh sách hợp lệ "
-                        f"({', '.join(config.VALID_DEPARTMENTS)}). Vui lòng liên hệ IT."
-                    )
+            if st.button("Tra cứu", type="primary", use_container_width=True):
+                if not ma_nv_input.strip():
+                    st.error("Vui lòng nhập Mã nhân viên.")
                 else:
-                    st.session_state.ma_nv = ma_nv_input.strip()
-                    st.session_state.ma_bo_phan = dept
-                    st.session_state.step = 2
-                    st.rerun()
+                    with st.spinner("Đang tra cứu thông tin nhân viên..."):
+                        try:
+                            dept = lookup_department_by_employee(ma_nv_input.strip())
+                        except Exception as exc:
+                            st.error("Lỗi kết nối Google Sheets — chi tiết kỹ thuật bên dưới:")
+                            st.exception(exc)
+                            dept = None
+
+                    if dept is None:
+                        st.error(
+                            "❌ Không tìm thấy Mã nhân viên trong hệ thống. "
+                            "Vui lòng kiểm tra lại hoặc liên hệ bộ phận Nhân sự."
+                        )
+                    elif dept not in config.VALID_DEPARTMENTS:
+                        st.error(
+                            f"❌ Mã bộ phận '{dept}' tra cứu được không nằm trong danh sách hợp lệ "
+                            f"({', '.join(config.VALID_DEPARTMENTS)}). Vui lòng liên hệ IT."
+                        )
+                    else:
+                        st.session_state.ma_nv = ma_nv_input.strip()
+                        st.session_state.ma_bo_phan = dept
+                        st.session_state.step = 2
+                        st.rerun()
 
 # ============================================================
 # VIEW 2: CHỌN NHÀ HÀNG (hoặc Bulk Import nhiều nhà hàng)
@@ -380,8 +352,12 @@ elif st.session_state.step == 2:
         dept = st.session_state.ma_bo_phan
         allowed_fields = [k for k, v in config.KPI_FIELDS.items() if v["dept"] == dept]
 
+        input_zone = st.container()
+        input_zone.markdown('<div class="input-zone-marker"></div>', unsafe_allow_html=True)
+
         # -------------------- NHÁNH 1: CHỌN TỪNG NHÀ HÀNG --------------------
         if mode == "🔍 Chọn từng nhà hàng":
+          with input_zone:
             with st.spinner("Đang tải danh sách nhà hàng..."):
                 try:
                     restaurants = load_restaurants()
@@ -432,6 +408,7 @@ elif st.session_state.step == 2:
 
         # -------------------- NHÁNH 2: BULK IMPORT --------------------
         else:
+          with input_zone:
             st.markdown(
                 f"[📥 Tải file Template mẫu]({config.TEMPLATE_DOWNLOAD_URL})  \n"
                 "Điền **Mã nhà hàng** vào cột A cho từng dòng, và điền giá trị KPI vào các cột "
