@@ -59,13 +59,14 @@ def _get_endpoint_config() -> tuple[str, str]:
     return url, api_key
 
 
-def _call_apps_script(action: str, payload: Optional[dict] = None, timeout: int = 60) -> dict:
+def _call_apps_script(action: str, payload: Optional[dict] = None, timeout: int = 60, max_attempts: int = 3) -> dict:
     """
     Gọi 1 action tới Apps Script Web App, trả về phần `data` trong response JSON.
 
-    Apps Script đôi khi phản hồi chậm bất thường ở lần gọi đầu tiên sau một
-    thời gian không hoạt động ("cold start"). Để giảm lỗi gián đoạn cho người
-    dùng, hàm này tự động thử lại 1 lần nếu lần gọi đầu bị timeout.
+    Apps Script đôi khi phản hồi chậm hoặc lỗi tạm thời (cold-start, hoặc lỗi
+    redirect nội bộ trả về 404/5xx) ở lần gọi đầu. Để giảm lỗi gián đoạn cho
+    người dùng, hàm này tự động thử lại tối đa `max_attempts` lần cho MỌI lỗi
+    liên quan tới request (timeout, lỗi kết nối, lỗi HTTP), không chỉ timeout.
     """
     url, api_key = _get_endpoint_config()
     body = {"action": action, "api_key": api_key}
@@ -73,19 +74,17 @@ def _call_apps_script(action: str, payload: Optional[dict] = None, timeout: int 
         body.update(payload)
 
     last_exc = None
-    for attempt in range(2):  # thử tối đa 2 lần: 1 lần chính + 1 lần retry
+    for attempt in range(max_attempts):
         try:
             resp = requests.post(url, json=body, timeout=timeout)
             resp.raise_for_status()
             break
-        except requests.Timeout as exc:
-            last_exc = exc
-            continue  # thử lại lần nữa (nếu còn lượt)
         except requests.RequestException as exc:
-            raise RuntimeError(f"Không gọi được Apps Script Web App: {exc}") from exc
+            last_exc = exc
+            continue
     else:
         raise RuntimeError(
-            f"Không gọi được Apps Script Web App sau 2 lần thử (timeout={timeout}s): {last_exc}"
+            f"Không gọi được Apps Script Web App sau {max_attempts} lần thử: {last_exc}"
         )
 
     try:
