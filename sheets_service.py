@@ -18,6 +18,7 @@ Code.gs (trong thư mục apps_script/) và lấy URL Web App.
 
 from __future__ import annotations
 import datetime
+import uuid
 from typing import Optional
 
 import requests
@@ -165,12 +166,14 @@ def append_actual_row(
     chia 100 ở bước ghi xuống Sheet này, KHÔNG đổi cách người dùng nhập liệu hay
     cách hiển thị trong giao diện.
 
-    QUAN TRỌNG - KHÔNG TỰ ĐỘNG RETRY: khác với các thao tác chỉ đọc (an toàn
-    khi gọi lại nhiều lần), đây là thao tác GHI. Nếu Apps Script đã append
-    thành công nhưng phần PHẢN HỒI bị lỗi trên đường về (vd lỗi redirect nội
-    bộ của Google, xem README), việc tự động gọi lại sẽ ghi TRÙNG dòng dữ
-    liệu. Vì vậy chỉ thử 1 lần; nếu lỗi, người dùng cần tự kiểm tra trong
-    Sheet "Thực tế" xem dòng đã được ghi chưa trước khi bấm Submit lại.
+    CHỐNG TRÙNG (idempotency): mỗi lần gọi được gắn kèm 1 `request_id` ngẫu
+    nhiên duy nhất. `_call_apps_script` giữ NGUYÊN request_id này xuyên suốt
+    các lần retry của CÙNG một lệnh gọi (vì `body` chỉ tạo 1 lần rồi tái sử
+    dụng cho mọi lần thử). Phía Apps Script (Code.gs) dùng CacheService để
+    nhận diện: nếu request_id đã được xử lý (đã ghi) ở lần thử trước đó, lần
+    gọi lại sẽ tự động BỎ QUA thay vì ghi thêm 1 dòng nữa. Nhờ vậy, việc TỰ
+    ĐỘNG RETRY khi gặp lỗi tạm thời (vd lỗi redirect nội bộ của Google) là AN
+    TOÀN, không tạo dữ liệu trùng lặp.
     """
     row = [ma_cua_hang, thang, nam]
     for field_key in config.WRITE_ROW_ORDER:
@@ -187,13 +190,5 @@ def append_actual_row(
     row.append(ma_nv)
     row.append(timestamp)
 
-    try:
-        _call_apps_script("append_actual", {"row": row}, max_attempts=1)
-    except RuntimeError as exc:
-        raise RuntimeError(
-            f"{exc}\n\n"
-            "⚠️ LƯU Ý: lỗi này có thể chỉ xảy ra ở bước PHẢN HỒI (không phải "
-            "lỗi ghi dữ liệu thực sự). Vui lòng mở sheet 'Thực tế' kiểm tra "
-            "xem dòng dữ liệu đã được ghi chưa TRƯỚC KHI bấm Submit lại, để "
-            "tránh tạo dòng trùng lặp."
-        ) from exc
+    request_id = str(uuid.uuid4())
+    _call_apps_script("append_actual", {"row": row, "request_id": request_id}, max_attempts=3)
