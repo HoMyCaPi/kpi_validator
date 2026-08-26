@@ -94,7 +94,7 @@ CUSTOM_CSS = f"""
     /* ---- DÒNG TIÊU ĐỀ LỚN "KPI VALIDATOR WORKSPACE" - chỉnh size ở ĐÂY ---- */
     .kpi-title {{
         color: {config.COLOR_ACCENT};
-        font-size: 25px;
+        font-size: 35px;
         margin: 0;
         font-weight: 500;
         letter-spacing: 0.5px;
