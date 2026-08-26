@@ -104,19 +104,34 @@ def _call_apps_script(action: str, payload: Optional[dict] = None, timeout: int 
 # ============================================================
 # 2. VIEW 1 - TRA CỨU MÃ BỘ PHẬN THEO MÃ NHÂN VIÊN
 # ============================================================
+@st.cache_data(ttl=300, show_spinner=False)
+def _load_employee_directory() -> dict:
+    """
+    Tải TOÀN BỘ danh sách Mã NV -> Mã bộ phận 1 lần (action=list_employees),
+    cache 5 phút và DÙNG CHUNG cho mọi người dùng trong thời gian cache còn hiệu
+    lực. Nhờ vậy, chỉ lần tra cứu ĐẦU TIÊN sau khi cache hết hạn mới phải chờ
+    Apps Script phản hồi (có thể chậm do cold-start); các lần tra cứu tiếp theo
+    -- kể cả của người dùng khác -- được tra cứu cục bộ, gần như tức thời.
+    """
+    result = _call_apps_script("list_employees")
+    directory = {}
+    for item in (result or []):
+        ma = str(item.get("ma_nv", "")).strip().upper()
+        if ma:
+            directory[ma] = str(item.get("department", "")).strip().upper()
+    return directory
+
+
 def lookup_department_by_employee(ma_nv: str) -> Optional[str]:
     """
-    Tra cứu 'Mã bộ phận' dựa trên 'Mã nhân viên' qua Apps Script (action=lookup_department).
+    Tra cứu 'Mã bộ phận' dựa trên 'Mã nhân viên', dùng danh sách đã cache.
     Trả về Mã bộ phận (str) nếu tìm thấy, None nếu không tìm thấy.
     """
-    ma_nv = (ma_nv or "").strip()
+    ma_nv = (ma_nv or "").strip().upper()
     if not ma_nv:
         return None
-
-    result = _call_apps_script("lookup_department", {"ma_nv": ma_nv})
-    if result and result.get("found"):
-        return result.get("department")
-    return None
+    directory = _load_employee_directory()
+    return directory.get(ma_nv)
 
 
 # ============================================================
