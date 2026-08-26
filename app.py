@@ -93,16 +93,17 @@ CUSTOM_CSS = f"""
     }}
     .kpi-header h1 {{
         color: {config.COLOR_WHITE};
-        font-size: 30px;
+        font-size: 32px;
         margin: 0;
         font-weight: 800;
         letter-spacing: 0.5px;
     }}
     .kpi-header span {{
         color: {config.COLOR_ACCENT};
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 500;
         letter-spacing: 0.3px;
+        opacity: 0.9;
     }}
 
     /* ===================== STEPPER (THANH TIẾN TRÌNH - vạch pill bo tròn, tách khỏi card) ===================== */
