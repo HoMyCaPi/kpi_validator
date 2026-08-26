@@ -172,13 +172,18 @@ CUSTOM_CSS = f"""
         margin-bottom: 30px;
     }}
 
+    /* Ẩn icon liên kết (anchor link) mà Streamlit tự thêm cạnh mỗi tiêu đề */
+    [data-testid="stHeaderActionElements"] {{
+        display: none !important;
+    }}
+
     /* ===================== CARD CHỨA NỘI DUNG (container border=True) ===================== */
     div[data-testid="stVerticalBlockBorderWrapper"] {{
         background-color: {config.COLOR_WHITE} !important;
         border: 1px solid #E7EAEE !important;
         border-top: 4px solid {config.COLOR_ACCENT} !important;
         border-radius: 14px !important;
-        box-shadow: 0 1px 8px rgba(0,0,0,0.06) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
         margin-bottom: 20px;
     }}
     div[data-testid="stVerticalBlockBorderWrapper"] > div {{
@@ -316,6 +321,9 @@ def render_step_bar():
 
 
 render_step_bar()
+# Spacer cố định (không phụ thuộc CSS :has()) để đảm bảo Stepper luôn tách
+# rời hoàn toàn khỏi Card bên dưới, kể cả khi trình duyệt không hỗ trợ :has().
+st.markdown('<div style="height: 28px;"></div>', unsafe_allow_html=True)
 
 # ============================================================
 # VIEW 1: XÁC THỰC NHÂN VIÊN
