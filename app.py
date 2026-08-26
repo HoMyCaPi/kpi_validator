@@ -100,7 +100,7 @@ CUSTOM_CSS = f"""
     }}
     .kpi-header span {{
         color: {config.COLOR_ACCENT};
-        font-size: 12px;
+        font-size: 22px;
         font-weight: 500;
         letter-spacing: 0.3px;
         opacity: 0.9;
